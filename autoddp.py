@@ -40,7 +40,9 @@ def ddpautomation():
                         gww.SwitchTwoCells(ananswer[0],ananswer[1], gd)
                 else:
                     gww.wndwrapper.Click(coords=(364, 390))
-
+        except GWW.application.ProcessNotFoundError, err:
+            print err
+            time.sleep(1)
         except Exception, err:
             print err
 
