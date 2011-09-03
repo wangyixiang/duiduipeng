@@ -1,7 +1,7 @@
 from pywinauto import *
 import PIL
 import time
-
+from random import randint
 #ddp datas
 
 lefttopx = 269
@@ -37,14 +37,7 @@ def switchtwocells(hwndwraper, pos1, pos2):
     cellcount = cellcount + 1
     hwndwraper.Click(coords=pos1)
     hwndwraper.Click(coords=pos2)
-    print cellcount % 113,' ', pos1, pos2
-
-def getddpwnd():
-    processid = application.process_from_module('twinrpg.exe')
-    #twinrpg.exe
-    findone = findwindows.find_window(process=processid)
-    ddpwrapper = controls.HwndWrapper.HwndWrapper(findone)
-    return ddpwrapper
+    print pos1, pos2
 
 def generatehitpointslist(firsthitpoint, cellwidth, cellheight, colcellnums, rowcellnums):
     hitpointslist = []
@@ -79,12 +72,72 @@ def testbruteforceway():
     hitpointslist = generatehitpointslist(firsthitpoint, standardwidth, standardheight, colcellnums, rowcellnums)
     bruteforceway(ddpwrapper, hitpointslist, colcellnums, rowcellnums)
     
-if True:
+if False:
     testbruteforceway()
     
-hitpointslist = generatehitpointslist(firsthitpoint, standardwidth, standardheight, colcellnums, rowcellnums)
-for i in range(1, len(hitpointslist)+1):
-    if i % 8 == 1:
-        print 
+class GameWindowsWrapper(object):
+    def __init__(self):
+        self.gameprocessname = None
+        self.gameprocessid = None
+        self.wndwrapper = None
+    
+    def AttachGameProcess(self, processname):
+        processid = application.process_from_module(processname)
+        if processid:
+            findone = findwindows.find_window(process=processid)
+            if findone:
+                self.gameprocessid = processid
+                self.gameprocessname = processname
+                self.wndwrapper = controls.HwndWrapper.HwndWrapper(findone)
+                return True
+        return False
+    
+    def GetGameImage(self):
+        if self.wndwrapper:
+            return self.wndwrapper.CaptureAsImage()
+        return None
+
+class DDPGameData(object):
+    def __init__(self):
+        #I measure the snapshot of the ddp, so I get the following coordinates and data
+        #all coordinates are started from the animal cells matrix's left and upper
+        self.leftupperx = 268
+        self.leftuppery = 94
+        #according to my observation, the cells on most outside are a little different from the cells inside,
+        #the height of the upper side and the lower side cells is (standardcellheight - 1)
+        #the width of the left side and right side cells is (standardcellwith - 1)
+        self.standardcellwidth = self.standardcellheight = 48
+        self.firsthitpoint = ( self.leftupperx + self.standardcellwidth/2, \
+                               self.leftuppery + self.standardcellheight/2)
+        self.rowcellnums = 8
+        self.colcellnums = 8
+        self._initcellhitpointsmatrix()
+
+    def _initcellhitpointsmatrix(self):
+        self.cellhitpointsmatrix = []
+        for rowcellnum in range(self.rowcellnums):
+            for colcellnum in range(self.colcellnums):
+                self.cellhitpointsmatrix.append((self.firsthitpoint[0] + self.standardcellwidth*colcellnum ,\
+                                      self.firsthitpoint[1] + self.standardcellheight*rowcellnum))
+
+    
+class DDPWindowsWrapper(GameWindowsWrapper):
+    def __init__(self):
+        GameWindowsWrapper.__init__(self)
+        self.AttachGameProcess('twinrpg.exe')
+    
+    def SwitchTwoCells(self, pos1, pos2, antiantirobot=False, logit=False):
+        if not antiantirobot:
+            self.wndwrapper.Click(coords=pos1)
+            self.wndwrapper.Click(coords=pos2)
+        else:
+            self.wndwrapper.Click(coords=(pos1[0] + randint(0,8), pos1[1] + randint(0,8)))
+            self.wndwrapper.Click(coords=(pos2[0] + randint(0,8), pos2[1] + randint(0,8)))
+        if logit:
+            print pos1, pos2
+    
+    def ReattachGameProcess(self):
+        self.AttachGameProcess('twinrpg.exe')
         
-    print hitpointslist[i-1],
+        
+        
