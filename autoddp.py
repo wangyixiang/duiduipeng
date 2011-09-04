@@ -17,7 +17,6 @@ def logmresult(matrix, matrixsize):
     print
 
 def ddpautomation():
-    
     gd = GD.DDPGameData()
     gm = GM.DDPGameMatrix()
     sp = SP.DuiDuiPengPuzzle()
@@ -46,4 +45,58 @@ def ddpautomation():
         except Exception, err:
             print err
 
-ddpautomation()
+def ddpautomation_debug():
+    gd = GD.DDPGameData()
+    gm = GM.DDPGameMatrix()
+    sp = SP.DuiDuiPengPuzzle()
+    time.clock()
+    timeit = lambda starttime: time.clock() - starttime
+    switchcount = 1
+    aggitime = agmfitime = afaatime = ascttime = 0
+    gww = None
+    while True:
+        try:
+            if not gww:
+                gww = GWW.DDPWindowsWrapper()
+            else:
+                gww.ReattachGameProcess()
+            while True:
+                starttime = ggitime = gmfitime = faatime = scttime = None
+                starttime = time.clock()
+                sampleim = gww.GetGameImage()
+                ggitime = timeit(starttime)
+                starttime = time.clock()
+                samplematrix = gm.GetMatrixFromImage(sampleim)
+                gmfitime = timeit(starttime)
+                if samplematrix:
+                    sp.InitRPuzzle(samplematrix)
+                    starttime = time.clock()
+                    ananswer = sp.FindAnAnswer()
+                    faatime = timeit(starttime)
+                    if ananswer:
+                        print time.clock(), ananswer
+                        starttime = time.clock()
+                        gww.SwitchTwoCells(ananswer[0],ananswer[1], gd)
+                        scttime = timeit(starttime)
+                        aggitime = (aggitime * (switchcount - 1) + ggitime) / switchcount
+                        agmfitime = (agmfitime * (switchcount - 1) + gmfitime) / switchcount
+                        afaatime = (afaatime * ( switchcount - 1) + faatime) / switchcount
+                        ascttime = (ascttime * ( switchcount - 1) + scttime) / switchcount
+                        switchcount += 1
+                        print 'GetImage time | GetMatrix time | SovlePuzzle time | SwitchCell time '
+                        print ggitime, '|', gmfitime, '|', faatime, '|', scttime
+                        print 'avg GetImageTime|avg GetMatrixTime|avg SolvePuzzleTime|avg SwitchCellTime'
+                        print aggitime, '|', agmfitime, '|', afaatime, '|', ascttime
+                else:
+                    gww.wndwrapper.Click(coords=(364, 390))
+        except GWW.application.ProcessNotFoundError, err:
+            print err
+            time.sleep(1)
+        except Exception, err:
+            print err
+            
+if __name__ == "__main__":
+    if _Debug:
+        ddpautomation_debug()
+    else:
+        ddpautomation()
